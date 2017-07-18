@@ -811,6 +811,12 @@ function _generate_a_indptr!(num_states::Int, s_indices::Vector, out::Vector)
     out
 end
 
+"""
+ σ[i] ∈ {1, ..., num_a}
+ out[i] ∈ {1, ..., num_sa}
+
+a_i, s_i -> sa_i = (s_i - 1) * num_a + a_i
+"""
 function _find_indices!(a_indices::Vector, a_indptr::Vector, sigma::Vector,
                         out::Vector)
     n = length(sigma)
@@ -818,6 +824,16 @@ function _find_indices!(a_indices::Vector, a_indptr::Vector, sigma::Vector,
         if sigma[i] == a_indices[j]
             out[i] = j
         end
+    end
+end
+
+function QuantEcon._find_indices!(a_indices::Flatten, a_indptr::StepRange, σ::Vector, out::Vector)
+    num_a = length(a_indptr) - 1
+    #println("$num_a, $(maximum(σ))")
+
+    for (s_i, σ_s_i) in enumerate(σ)
+        #println("$s_i, $σ")
+        out[s_i] = (s_i - 1) * num_a + σ_s_i
     end
 end
 
