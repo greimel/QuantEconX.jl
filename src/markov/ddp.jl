@@ -23,6 +23,7 @@ Notes
 =#
 
 import Base: *
+import Base.Iterators: flatten, repeated, Flatten, drop
 
 #------------------------#
 #-Types and Constructors-#
@@ -50,8 +51,8 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
     R::AbstractArray{T,NR}                     # Reward Array
     Q::AbstractArray{T,NQ}                     # Transition Probability Array
     beta::Tbeta                        # Discount Factor
-    a_indices::Nullable{Vector{Tind}}  # Action Indices
-    a_indptr::Nullable{Vector{Tind}}   # Action Index Pointers
+    a_indices::Nullable  # Action Indices
+    a_indptr::Nullable   # Action Index Pointers
 
     function (::Type{DiscreteDP{T,NQ,NR,Tbeta,Tind}}){T,NQ,NR,Tbeta,Tind}(
             R::Array, Q::Array, beta::Real
@@ -89,8 +90,50 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr)
     end
 
+
+#s_grid = Iterators.product(linspace(0.0, 10.0, 15), linspace(-2.0, 10.0, 15))
+#enumerate(s_grid)
+
     # Note: We left R, Q as type Array to produce more helpful error message with regards to shape.
     # R and Q are dense Arrays
+
+    ##########################################
+    ######### FG: USING LINSPACES ############
+    ##########################################
+
+    function (::Type{DiscreteDP{T,NQ,NR,Tbeta,Tind}}){T,NQ,NR,Tbeta,Tind}(
+            R::AbstractArray, Q::AbstractArray, β::Real, num_s::Tind,
+            num_a::Tind
+        )
+
+        if NQ != 2
+            throw(ArgumentError("Q must be 2-dimensional with s-a formulation"))
+        end
+        if NR != 1
+            throw(ArgumentError("R must be 1-dimensional with s-a formulation"))
+        end
+        (β < 0 || β >= 1) && throw(ArgumentError("β must be [0, 1)"))
+        # verify input integrity (same length)
+        num_sa_pairs, num_states = size(Q)
+        if length(R) != num_sa_pairs
+            throw(ArgumentError("shapes of R and Q must be (L,) and (L,n)"))
+        end
+
+        if num_s*num_a != num_sa_pairs
+            msg = "product of lengths of grids must be equal to the number of s-a pairs"
+            throw(ArgumentError(msg))
+        end
+
+        _a_indices = get_a_indices(num_s, num_a)
+        a_indptr = 1:num_s:(num_sa_pairs+1)
+
+        # package into nullables before constructing type
+        _a_indices = Nullable(_a_indices)
+        a_indptr = Nullable(a_indptr)
+
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, β, _a_indices, a_indptr)
+
+    end
 
     function (::Type{DiscreteDP{T,NQ,NR,Tbeta,Tind}}){T,NQ,NR,Tbeta,Tind}(
             R::AbstractArray, Q::AbstractArray, beta::Real, s_indices::Vector,
@@ -200,6 +243,18 @@ function DiscreteDP{T,NQ,NR,Tbeta,Tind}(R::AbstractArray{T,NR},
     DiscreteDP{T,NQ,NR,Tbeta,Tind}(R, Q, beta, s_indices, a_indices)
 end
 
+##########################################
+######### FG: USING LINSPACES ############
+##########################################
+
+function DiscreteDP{T,NQ,NR,Tbeta,Tind}(R::AbstractArray{T,NR},
+                                        Q::AbstractArray{T,NQ},
+                                        beta::Tbeta, num_s::Tind,
+                                        num_a::Tind)
+    DiscreteDP{T,NQ,NR,Tbeta,Tind}(R, Q, beta, num_s, num_a)
+end
+
+
 #--------------#
 #-Type Aliases-#
 #--------------#
@@ -273,7 +328,7 @@ type DPSolveResult{Algo<:DDPAlgorithm,Tval<:Real}
             ddp::DiscreteDP
         )
         v = s_wise_max(ddp, ddp.R) # Initialise v with v_init
-        ddpr = new{Algo,Tval}(v, similar(v), 0, similar(v, Int))
+        ddpr = new{Algo,Tval}(v, similar(v), 0, zeros(Int, size(v)))
 
         # fill in sigma with proper values
         compute_greedy!(ddp, ddpr)
@@ -284,7 +339,7 @@ type DPSolveResult{Algo<:DDPAlgorithm,Tval<:Real}
     function (::Type{DPSolveResult{Algo,Tval}}){Algo,Tval}(
             ddp::DiscreteDP, v::Vector
         )
-        ddpr = new{Algo,Tval}(v, similar(v), 0, similar(v, Int))
+        ddpr = new{Algo,Tval}(v, similar(v), 0, zeros(Int, size(v)))
 
         # fill in sigma with proper values
         compute_greedy!(ddp, ddpr)
@@ -663,6 +718,45 @@ function s_wise_max!(a_indices::Vector, a_indptr::Vector, vals::Vector,
     out, out_argmax
 end
 
+function s_wise_max!(a_indices::Flatten, a_indptr::StepRange, vals::Vector,
+                      out::Vector)
+    sa_i = 1
+    for (s_i, a_thres) in enumerate(drop(a_indptr, 1))
+        out[s_i] = vals[sa_i]
+        # a_i = 1
+        # out_argmax[s_i] = a_i
+        while sa_i < a_thres
+            if out[s_i] < vals[sa_i]
+                out[s_i] = vals[sa_i]
+                # out_argmax[s_i] = a_i
+            end
+            sa_i += 1
+            # a_i += 1
+        end
+        break
+    end
+    out#, out_argmax
+end
+
+function s_wise_max!(a_indices::Flatten, a_indptr::StepRange, vals::Vector,
+                      out::Vector, out_argmax::Vector)
+    sa_i = 1
+    for (s_i, a_thres) in enumerate(drop(a_indptr, 1))
+        out[s_i] = vals[sa_i]
+        a_i = 1
+        out_argmax[s_i] = a_i
+        while sa_i < a_thres
+
+            if out[s_i] < vals[sa_i]
+                out[s_i] = vals[sa_i]
+                out_argmax[s_i] = a_i
+            end
+            sa_i += 1
+            a_i += 1
+        end
+    end
+    out, out_argmax
+end
 
 """
 Check whether `s_indices` and `a_indices` are sorted in lexicographic order.
@@ -839,3 +933,9 @@ function _solve!(ddp::DiscreteDP, ddpr::DPSolveResult{MPFI}, max_iter::Integer,
 
     ddpr
 end
+
+
+
+
+get_s_indices(num_s, num_a) = flatten(i for j in 1:num_a, i in 1:num_s)
+get_a_indices(num_s, num_a) = flatten(repeated(1:num_a, num_s))
