@@ -47,8 +47,8 @@ DiscreteDP type for specifying paramters for discrete dynamic programming model
 
 """
 type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
-    R::Array{T,NR}                     # Reward Array
-    Q::Array{T,NQ}                     # Transition Probability Array
+    R::AbstractArray{T,NR}                     # Reward Array
+    Q::AbstractArray{T,NQ}                     # Transition Probability Array
     beta::Tbeta                        # Discount Factor
     a_indices::Nullable{Vector{Tind}}  # Action Indices
     a_indptr::Nullable{Vector{Tind}}   # Action Index Pointers
