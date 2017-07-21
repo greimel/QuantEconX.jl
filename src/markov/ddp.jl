@@ -515,8 +515,34 @@ function evaluate_policy{T<:Integer}(ddp::DDPsa, sigma::Vector{T})
     R_sigma, Qt_sigma = RQt_sigma(ddp, sigma) ## !!! really slow!
     b = R_sigma
     At = I - ddp.beta * Qt_sigma
-    At' \ b
+    (b' / At)'
 end
+
+# function evaluate_policy{T<:Integer}(ddp::DDPsa, sigma::Vector{T})
+#     @time R_sigma, Qt_sigma = RQt_sigma(ddp, sigma) ## !!! really slow!
+#     @time b = R_sigma
+#     @time A = I - ddp.beta * Qt_sigma
+#     @time \(A', b)
+# end
+
+
+
+# function evaluate_policy!{T<:Integer}(ddp::DiscreteDP, sigma::Vector{T},
+#     Q_sigma, R_sigma, sigma_indices)
+#     RQ_sigma!(Q_sigma, R_sigma, sigma_indices, ddp, sigma) ## !!! really slow!
+#     #@time b = R_sigma
+#     Q_sigma .= Base.I - (ddp.beta * Q_sigma)
+#     @time \(Q_sigma, R_sigma)
+# end
+#
+#
+# function evaluate_policy!!{T<:Integer}(ddp::DiscreteDP, QQ_sigma, sigma::Vector{T},
+#     sigma_indices)
+#     R_sigma = RQ_sigma!!(sigma_indices, Q_sigma, ddp, sigma) ## !!! really slow!
+#     #@time b = R_sigma
+#     @time QQ_sigma .= Base.I - (ddp.beta * Q_sigma)
+#     @time QQ_sigma \ R_sigma
+# end
 #### too many allocations?
 
 # ------------- #
@@ -634,6 +660,21 @@ function RQtt_sigma{T<:Integer}(ddp::DDPsa, sigma::Array{T})
     R_sigma = ddp.R[sigma_indices]
     Qt_sigma = ddp.Qt[:,sigma_indices]
     return R_sigma, Qt_sigma'
+end
+
+function RQ_sigma!{T<:Integer}(R_sigma, Q_sigma, sigma_indices, ddp::DDPsa, sigma::Array{T})
+    #sigma_indices = Array{T}(num_states(ddp))
+    @time _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices, ddp.num_actions)
+    @time R_sigma .= ddp.R[sigma_indices]
+    @time Q_sigma .= ddp.Q[sigma_indices, :] # that's Q_sigma
+end
+
+function RQ_sigma!!{T<:Integer}(sigma_indices, ddp::DDPsa, sigma::Array{T})
+    #sigma_indices = Array{T}(num_states(ddp))
+    _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices, ddp.num_actions)
+    R_sigma = view(ddp.R, sigma_indices)
+    Q_sigma = view(ddp.Q, sigma_indices, :)
+    R_sigma, Q_sigma
 end
 
 # ---------------- #
