@@ -53,6 +53,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
     beta::Tbeta                        # Discount Factor
     a_indices::Nullable  # Action Indices
     a_indptr::Nullable   # Action Index Pointers
+    num_actions::Tind
 
     function (::Type{DiscreteDP{T,NQ,NR,Tbeta,Tind}}){T,NQ,NR,Tbeta,Tind}(
             R::Array, Q::Array, beta::Real
@@ -87,7 +88,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         _a_indices = Nullable{Vector{Int}}()
         a_indptr = Nullable{Vector{Int}}()
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr)
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, num_actions)
     end
 
 
@@ -125,13 +126,13 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         end
 
         _a_indices = get_a_indices(num_s, num_a)
-        a_indptr = 1:num_s:(num_sa_pairs+1)
+        a_indptr = 1:num_a:(num_sa_pairs+1)
 
         # package into nullables before constructing type
         _a_indices = Nullable(_a_indices)
         a_indptr = Nullable(a_indptr)
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, β, _a_indices, a_indptr)
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, β, _a_indices, a_indptr, num_a)
 
     end
 
@@ -194,7 +195,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         _a_indices = Nullable{Vector{Tind}}(_a_indices)
         a_indptr = Nullable{Vector{Tind}}(a_indptr)
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr)
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, div(num_sa_pairs, num_states))
     end
 end
 
@@ -503,11 +504,13 @@ Compute the value of a policy.
 
 """
 function evaluate_policy{T<:Integer}(ddp::DiscreteDP, sigma::Vector{T})
-    R_sigma, Q_sigma = RQ_sigma(ddp, sigma)
-    b = R_sigma
-    A = I - ddp.beta * Q_sigma
-    return A \ b
+    @time R_sigma, Q_sigma = RQ_sigma(ddp, sigma) ## !!! really slow!
+    @time b = R_sigma
+    @time A = I - ddp.beta * Q_sigma
+    @time A \ b
 end
+
+#### too many allocations?
 
 # ------------- #
 # Solve methods #
@@ -604,7 +607,7 @@ end
 # TODO: express it in a similar way as above to exploit Julia's column major order
 function RQ_sigma{T<:Integer}(ddp::DDPsa, sigma::Array{T})
     sigma_indices = Array{T}(num_states(ddp))
-    _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices)
+    _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices, ddp.num_actions)
     R_sigma = ddp.R[sigma_indices]
     Q_sigma = ddp.Q[sigma_indices, :]
     return R_sigma, Q_sigma
@@ -720,6 +723,7 @@ end
 
 function s_wise_max!(a_indices::Flatten, a_indptr::StepRange, vals::Vector,
                       out::Vector)
+    #print("!")
     sa_i = 1
     for (s_i, a_thres) in enumerate(drop(a_indptr, 1))
         out[s_i] = vals[sa_i]
@@ -733,13 +737,14 @@ function s_wise_max!(a_indices::Flatten, a_indptr::StepRange, vals::Vector,
             sa_i += 1
             # a_i += 1
         end
-        break
+        #break
     end
-    out#, out_argmax
+    return out#, out_argmax
 end
 
 function s_wise_max!(a_indices::Flatten, a_indptr::StepRange, vals::Vector,
                       out::Vector, out_argmax::Vector)
+    #print("!")
     sa_i = 1
     for (s_i, a_thres) in enumerate(drop(a_indptr, 1))
         out[s_i] = vals[sa_i]
@@ -818,7 +823,7 @@ end
 a_i, s_i -> sa_i = (s_i - 1) * num_a + a_i
 """
 function _find_indices!(a_indices::Vector, a_indptr::Vector, sigma::Vector,
-                        out::Vector)
+                        out::Vector, num_a::Int)
     n = length(sigma)
     for i in 1:n, j in a_indptr[i]:(a_indptr[i+1]-1)
         if sigma[i] == a_indices[j]
@@ -827,15 +832,21 @@ function _find_indices!(a_indices::Vector, a_indptr::Vector, sigma::Vector,
     end
 end
 
-function QuantEcon._find_indices!(a_indices::Flatten, a_indptr::StepRange, σ::Vector, out::Vector)
-    num_a = length(a_indptr) - 1
-    #println("$num_a, $(maximum(σ))")
-
-    for (s_i, σ_s_i) in enumerate(σ)
-        #println("$s_i, $σ")
-        out[s_i] = (s_i - 1) * num_a + σ_s_i
-    end
+function _find_indices!(a_indices::Flatten, a_indptr::StepRange, sigma::Vector,
+                        out::Vector, num_a::Int)
+    #one2n = collect(1:length(sigma))
+    out .= (0:num_a:num_a*(length(sigma)-1)) .+ sigma
 end
+
+# function QuantEcon._find_indices!(a_indices::Flatten, a_indptr::StepRange, σ::Vector, out::Vector)
+#     num_a = length(a_indptr) - 1
+#     #println("$num_a, $(maximum(σ))")
+#
+#     for (s_i, σ_s_i) in enumerate(σ)
+#         #println("$s_i, $σ")
+#         out[s_i] = (s_i - 1) * num_a + σ_s_i
+#     end
+# end
 
 """
 Define Matrix Multiplication between 3-dimensional matrix and a vector
