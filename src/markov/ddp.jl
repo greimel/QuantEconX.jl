@@ -54,6 +54,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
     a_indices::Nullable  # Action Indices
     a_indptr::Nullable   # Action Index Pointers
     num_actions::Tind
+    Qt::AbstractArray{T,NQ}
 
     function (::Type{DiscreteDP{T,NQ,NR,Tbeta,Tind}}){T,NQ,NR,Tbeta,Tind}(
             R::Array, Q::Array, beta::Real
@@ -88,7 +89,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         _a_indices = Nullable{Vector{Int}}()
         a_indptr = Nullable{Vector{Int}}()
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, num_actions)
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, num_actions, Q')
     end
 
 
@@ -132,7 +133,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         _a_indices = Nullable(_a_indices)
         a_indptr = Nullable(a_indptr)
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, β, _a_indices, a_indptr, num_a)
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, β, _a_indices, a_indptr, num_a, Q')
 
     end
 
@@ -195,7 +196,7 @@ type DiscreteDP{T<:Real,NQ,NR,Tbeta<:Real,Tind}
         _a_indices = Nullable{Vector{Tind}}(_a_indices)
         a_indptr = Nullable{Vector{Tind}}(a_indptr)
 
-        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, div(num_sa_pairs, num_states))
+        new{T,NQ,NR,Tbeta,Tind}(R, Q, beta, _a_indices, a_indptr, div(num_sa_pairs, num_states), Q')
     end
 end
 
@@ -510,6 +511,12 @@ function evaluate_policy{T<:Integer}(ddp::DiscreteDP, sigma::Vector{T})
     @time A \ b
 end
 
+function evaluate_policy{T<:Integer}(ddp::DDPsa, sigma::Vector{T})
+    R_sigma, Qt_sigma = RQt_sigma(ddp, sigma) ## !!! really slow!
+    b = R_sigma
+    At = I - ddp.beta * Qt_sigma
+    At' \ b
+end
 #### too many allocations?
 
 # ------------- #
@@ -611,6 +618,22 @@ function RQ_sigma{T<:Integer}(ddp::DDPsa, sigma::Array{T})
     R_sigma = ddp.R[sigma_indices]
     Q_sigma = ddp.Q[sigma_indices, :]
     return R_sigma, Q_sigma
+end
+
+function RQt_sigma{T<:Integer}(ddp::DDPsa, sigma::Array{T})
+    sigma_indices = Array{T}(num_states(ddp))
+    _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices, ddp.num_actions)
+    R_sigma = ddp.R[sigma_indices]
+    Qt_sigma = ddp.Qt[:,sigma_indices]
+    return R_sigma, Qt_sigma
+end
+
+function RQtt_sigma{T<:Integer}(ddp::DDPsa, sigma::Array{T})
+    sigma_indices = Array{T}(num_states(ddp))
+    _find_indices!(get(ddp.a_indices), get(ddp.a_indptr), sigma, sigma_indices, ddp.num_actions)
+    R_sigma = ddp.R[sigma_indices]
+    Qt_sigma = ddp.Qt[:,sigma_indices]
+    return R_sigma, Qt_sigma'
 end
 
 # ---------------- #
