@@ -378,6 +378,14 @@ function bellman_operator!(ddp::DiscreteDP, v::Vector, Tv::Vector, sigma::Vector
     Tv, sigma
 end
 
+## Added by Fabian -- reduces time by two thirds for some test case
+function bellman_operator!(ddp::DDPsa, v::Vector, Tv::Vector, sigma::Vector)
+    #vals = ddp.R + ddp.beta * (ddp.Q * v)
+    vals = ddp.R .+ ddp.beta .* (v' * ddp.Qt)'
+    s_wise_max!(ddp, vals, Tv, sigma)
+    Tv, sigma
+end
+
 """
 Apply the Bellman operator using `v=ddpr.v`, `Tv=ddpr.Tv`, and `sigma=ddpr.sigma`
 
