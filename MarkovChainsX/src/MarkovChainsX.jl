@@ -11,10 +11,10 @@ References
 https://lectures.quantecon.org/jl/finite_markov.html
 
 """
-module MarkovChains
+module MarkovChainsX
 
-using ..DiscreteRVs: DiscreteRV
-import ..QuantEconAPI: simulate, stationary_distributions
+using DiscreteRVs: DiscreteRV
+import QuantEconAPI: simulate, stationary_distributions
 using Markdown: @doc_str
 using Base.Iterators: take, cycle
 using SparseArrays: SparseMatrixCSC, nzrange
