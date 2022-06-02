@@ -11,6 +11,8 @@ References
 https://lectures.quantecon.org/jl/finite_markov.html
 
 =#
+
+using ..DiscreteRVs: DiscreteRV
 import Graphs: DiGraph, period, attracting_components,
                     strongly_connected_components, is_strongly_connected
 

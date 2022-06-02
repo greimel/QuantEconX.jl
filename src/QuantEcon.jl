@@ -149,6 +149,8 @@ export
     hp_filter,
     hamilton_filter
 
+include("discrete_rv.jl")
+using .DiscreteRVs
 
 include("sampler.jl")
 include("util.jl")
@@ -159,7 +161,7 @@ include("markov/markov_approx.jl")
 include("markov/mc_tools.jl")
 include("markov/ddp.jl")
 include("markov/random_mc.jl")
-include("discrete_rv.jl")
+
 include("ecdf.jl")
 include("estspec.jl")
 include("filter.jl")
