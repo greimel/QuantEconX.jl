@@ -19,6 +19,7 @@ jobs:
       matrix: 
         version:
           - '1.6' # LTS
+          - '1' # expands to latest 1.x.y release
         os:
           - ubuntu-latest
           - macOS-latest
