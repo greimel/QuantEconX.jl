@@ -1,4 +1,4 @@
-#=
+"""
 Generates an array of draws from a discrete random variable with a
 specified vector of probabilities.
 
@@ -17,7 +17,12 @@ TODO: as of 07/10/2014 it is not possible to define the property
       interface we see in the python version. Once issue 1974 from
       the main Julia repository is resolved, we can revisit this and
       implement that feature.
-=#
+"""
+module DiscreteRVs
+
+using Random: Random
+
+export DiscreteRV
 
 """
 Generates an array of draws from a discrete random variable with
@@ -78,3 +83,5 @@ function Random.rand!(out::AbstractArray{T}, d::DiscreteRV) where T<:Integer
 end
 
 @deprecate draw Random.rand
+
+end # module

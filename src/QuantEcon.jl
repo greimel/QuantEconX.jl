@@ -55,13 +55,11 @@ export
     period, is_irreducible, is_aperiodic, recurrent_classes,
     communication_classes, n_states,
     discrete_var, Even, Quantile, Quadrature,
+    gth_solve,
 
 # modeltools
     AbstractUtility, LogUtility, CRRAUtility, CFEUtility, EllipticalUtility,
     derivative,
-
-# gth_solve
-    gth_solve,
 
 # markov_approx
     tauchen,
@@ -149,6 +147,15 @@ export
     hp_filter,
     hamilton_filter
 
+module QuantEconAPI
+
+function simulate end
+function stationary_distributions end
+
+end
+
+include("discrete_rv.jl")
+using .DiscreteRVs
 
 include("sampler.jl")
 include("util.jl")
@@ -157,9 +164,13 @@ include("arma.jl")
 include("compute_fp.jl")
 include("markov/markov_approx.jl")
 include("markov/mc_tools.jl")
+using .MarkovChains
+
 include("markov/ddp.jl")
+using .DiscreteDPs
+
 include("markov/random_mc.jl")
-include("discrete_rv.jl")
+
 include("ecdf.jl")
 include("estspec.jl")
 include("filter.jl")
