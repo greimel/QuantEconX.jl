@@ -1,4 +1,4 @@
-#=
+"""
 Tools for working with Markov Chains
 
 @author : Spencer Lyon, Zac Cranko
@@ -10,12 +10,24 @@ References
 
 https://lectures.quantecon.org/jl/finite_markov.html
 
-=#
+"""
+module MarkovChains
 
 using ..DiscreteRVs: DiscreteRV
 import ..QuantEconAPI: simulate, stationary_distributions
-import Graphs: DiGraph, period, attracting_components,
+using Markdown: @doc_str
+using Base.Iterators: take, cycle
+using SparseArrays: SparseMatrixCSC, nzrange
+using Graphs: Graphs, DiGraph, period, attracting_components,
                     strongly_connected_components, is_strongly_connected
+
+export MarkovChain, MCIndSimulator, MCSimulator,
+                    stationary_distributions,
+                    simulate, simulate!, simulate_indices, simulate_indices!,
+                    period, is_irreducible, is_aperiodic, recurrent_classes,
+                    communication_classes, n_states,
+                    discrete_var, Even, Quantile, Quadrature,
+                    gth_solve
 
 @inline check_stochastic_matrix(P) = maximum(abs, sum(P, dims = 2) .- 1) < 5e-15 ? true : false
 
@@ -219,7 +231,7 @@ Return the period of the Markov chain `mc`.
 - `::Int` : Period of `mc`.
 
 """
-function period(mc::MarkovChain)
+function Graphs.period(mc::MarkovChain)
     g = DiGraph(mc.p)
     recurrent = attracting_components(g)
 
@@ -451,3 +463,5 @@ function simulate_indices!(X::Union{AbstractVector{T},AbstractMatrix{T}},
     end
     X
 end
+
+end # module

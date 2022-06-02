@@ -55,13 +55,11 @@ export
     period, is_irreducible, is_aperiodic, recurrent_classes,
     communication_classes, n_states,
     discrete_var, Even, Quantile, Quadrature,
+    gth_solve,
 
 # modeltools
     AbstractUtility, LogUtility, CRRAUtility, CFEUtility, EllipticalUtility,
     derivative,
-
-# gth_solve
-    gth_solve,
 
 # markov_approx
     tauchen,
@@ -166,6 +164,8 @@ include("arma.jl")
 include("compute_fp.jl")
 include("markov/markov_approx.jl")
 include("markov/mc_tools.jl")
+using .MarkovChains
+
 include("markov/ddp.jl")
 include("markov/random_mc.jl")
 
