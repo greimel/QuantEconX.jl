@@ -149,6 +149,13 @@ export
     hp_filter,
     hamilton_filter
 
+module QuantEconAPI
+
+function simulate end
+function stationary_distributions end
+
+end
+
 include("discrete_rv.jl")
 using .DiscreteRVs
 
