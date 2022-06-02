@@ -1,0 +1,6 @@
+name = "QuantEconAPI"
+uuid = "9dc171ab-a4d2-47e9-a956-ba794d016c0d"
+version = "0.1.0"
+
+[compat]
+julia = "1"
