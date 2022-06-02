@@ -23,7 +23,7 @@ Notes
 """
 module DiscreteDPs
 
-using ..MarkovChains
+using MarkovChainsX
 import Base: *
 using Markdown: @doc_str
 using LinearAlgebra: I
@@ -588,7 +588,7 @@ Returns the controlled Markov chain for a given policy `sigma`.
 mc : MarkovChain
      Controlled Markov chain.
 """
-MarkovChains.MarkovChain(ddp::DiscreteDP, ddpr::DPSolveResult) =
+MarkovChainsX.MarkovChain(ddp::DiscreteDP, ddpr::DPSolveResult) =
     MarkovChain(RQ_sigma(ddp, ddpr)[2])
 
 """

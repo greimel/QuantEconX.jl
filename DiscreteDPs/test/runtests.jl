@@ -9,6 +9,10 @@ Tests for markov/ddp.jl
 
 =#
 
+using Test
+using DiscreteDPs
+using SparseArrays: spzeros, issparse
+
 @testset "Testing markov/dpp.jl" begin
 
     #-Setup-#
