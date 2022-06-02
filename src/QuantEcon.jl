@@ -167,6 +167,8 @@ include("markov/mc_tools.jl")
 using .MarkovChains
 
 include("markov/ddp.jl")
+using .DiscreteDPs
+
 include("markov/random_mc.jl")
 
 include("ecdf.jl")
