@@ -1,4 +1,6 @@
-module QuantEcon
+module QuantEconX
+
+const QuantEcon = QuantEconX
 
 import Base: show, isapprox
 import Statistics: mean, std, var
@@ -23,6 +25,12 @@ import DSP: periodogram
 # useful types
 ScalarOrArray{T} = Union{T,Array{T}}
 
+using Reexport
+using QuantEconAPI
+@reexport using DiscreteRVs
+@reexport using MarkovChainsX
+@reexport using DiscreteDPs
+
 export
 # arma
     ARMA,
@@ -43,19 +51,6 @@ export
 # matrix_eqn
     solve_discrete_lyapunov,
     solve_discrete_riccati,
-
-# discrete_rv
-    DiscreteRV,
-    draw,
-
-# mc_tools
-    MarkovChain, MCIndSimulator, MCSimulator,
-    stationary_distributions,
-    simulate, simulate!, simulate_indices, simulate_indices!,
-    period, is_irreducible, is_aperiodic, recurrent_classes,
-    communication_classes, n_states,
-    discrete_var, Even, Quantile, Quadrature,
-    gth_solve,
 
 # modeltools
     AbstractUtility, LogUtility, CRRAUtility, CFEUtility, EllipticalUtility,
@@ -125,11 +120,6 @@ export
 # random_mc
     random_markov_chain, random_stochastic_matrix, random_discrete_dp,
 
-# ddp
-    DiscreteDP, VFI, PFI, MPFI, solve, RQ_sigma,
-    evaluate_policy, bellman_operator, compute_greedy,
-    bellman_operator!, compute_greedy!, num_states, backward_induction,
-
 # zeros / optimization
     bisect, brenth, brent, ridder, expand_bracket, divide_bracket,
     golden_method,
@@ -147,30 +137,13 @@ export
     hp_filter,
     hamilton_filter
 
-module QuantEconAPI
-
-function simulate end
-function stationary_distributions end
-
-end
-
-include("discrete_rv.jl")
-using .DiscreteRVs
-
 include("sampler.jl")
 include("util.jl")
 include("interp.jl")
 include("arma.jl")
 include("compute_fp.jl")
 include("markov/markov_approx.jl")
-include("markov/mc_tools.jl")
-using .MarkovChains
-
-include("markov/ddp.jl")
-using .DiscreteDPs
-
 include("markov/random_mc.jl")
-
 include("ecdf.jl")
 include("estspec.jl")
 include("filter.jl")

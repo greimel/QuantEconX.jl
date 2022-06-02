@@ -5,7 +5,8 @@ Generate MarkovChain and DiscreteDP instances randomly.
 
 =#
 import StatsBase: sample
-import QuantEcon: MarkovChain, DiscreteDP
+import MarkovChainsX: MarkovChain
+import DiscreteDPs: DiscreteDP
 
 # random_markov_chain
 """

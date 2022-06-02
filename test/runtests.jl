@@ -1,6 +1,4 @@
-using Pkg: activate
-activate(joinpath(@__DIR__, ".."))
-using QuantEcon
+using QuantEconX
 using Base.Iterators: take, cycle
 using DataStructures: counter
 using Distributions: LogNormal, pdf
@@ -10,6 +8,9 @@ using FFTW
 using DSP
 using SparseArrays
 using Test
+using QuantEconX
+
+const QuantEcon = QuantEconX
 
 tests = [
         "arma",
@@ -25,13 +26,13 @@ tests = [
         "lss",
         "markov_approx",
         "matrix_eqn",
-        "mc_tools",
+#        "mc_tools",
         "modeltool", # Check the submodule issue
         # "quad",
         "quadsum",
         "random_mc",
         "robustlq",
-        "ddp",
+#        "ddp",
         "zeros",
         "optimization",
         "interp",

@@ -21,7 +21,7 @@ https://lectures.quantecon.org/jl/kalman.html
 
 =#
 
-import .QuantEconAPI: simulate, stationary_distributions
+import QuantEconAPI: simulate, stationary_distributions
 
 @doc doc"""
 A type that describes the Gaussian Linear State Space Model
