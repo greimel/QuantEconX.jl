@@ -1,3 +1,10 @@
+using Test
+using MarkovChainsX
+using LinearAlgebra: I
+using SparseArrays: sparse
+using Base.Iterators: cycle, take
+
+
 """
 Generate the markov matrix for the KMR model with *sequential* move
 

@@ -69,7 +69,7 @@
 end
 
 module Test_at_def_sim
-    using QuantEcon
+    using QuantEconX
     using Test
 
     @def_sim Simulation (T => Float64,) struct Observation{T<:Number}
